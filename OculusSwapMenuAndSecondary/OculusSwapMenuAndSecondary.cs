@@ -9,7 +9,7 @@ namespace OculusSwapMenuAndSecondary
     {
         public override string Name => "OculusSwapMenuAndSecondary";
         public override string Author => "badhaloninja";
-        public override string Version => "1.0.0";
+        public override string Version => "1.1.0";
         public override string Link => "https://github.com/badhaloninja/OculusSwapMenuAndSecondary";
         public override void OnEngineInit()
         {
@@ -44,6 +44,42 @@ namespace OculusSwapMenuAndSecondary
                     return false;
                 }
                 return true;
+            }
+        }
+
+        [HarmonyPatch(typeof(TouchController), "BindNodeActions")]
+        class TouchController_BindNodeActions_Patch
+        {
+            public static bool Prefix(TouchController __instance, InputGroup group, IInputNode node, string name = null)
+            {
+				IDualAxisInputNode dualAxisInputNode = node as IDualAxisInputNode;
+                if (dualAxisInputNode != null) return true;
+
+                AnyInput anyInput = node as AnyInput;
+                if (anyInput == null)
+                {
+                    LeftRightSelector<bool> leftRightSelector = node as LeftRightSelector<bool>;
+                    if (leftRightSelector != null)
+                    {
+                        if (name == "Jump" || name == "Align")
+                        {
+                            leftRightSelector.SetNode(__instance.Side, InputNode.Digital(__instance.Side, "ButtonXA")); //JoystickClick
+                            return false;
+                        }
+                        if (!(name == "AnchorAction"))
+                        {
+                            return false;
+                        }
+                        leftRightSelector.SetNode(__instance.Side, InputNode.Digital(__instance.Side, "ButtonXA"));
+                        return false;
+                    }
+                }
+                else if (name == "Jump")
+                {
+                    anyInput.Inputs.Add(InputNode.Digital(__instance.Side, "ButtonXA"));
+                    return false;
+                }
+                return false;
             }
         }
     }
